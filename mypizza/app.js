@@ -19,7 +19,7 @@ var path = require('path');
 // Import du middleware cookie-parser pour lire les cookies dans les requêtes
 var cookieParser = require('cookie-parser');
 
-// Import du middleware morgan pour logger les requêtes HTTP dans la console
+// Import du middleware morgan pour logger les requêtes HTTP dans la console. 
 var logger = require('morgan');
 
 
