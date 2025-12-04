@@ -113,6 +113,31 @@ router.get('/', async (req, res) => {
     const [rows] = await query(sql);
     res.status(200).json(rows);
 });
+/**
+ * @swagger
+ * /pizzas/jour:
+ *   get:
+ *     summary: Récupérer la pizza du jour
+ *     tags: [Pizzas]
+ *     responses:
+ *       200:
+ *         description: Pizza du jour trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 title:
+ *                   type: string
+ *                 price:
+ *                   type: number
+ *       404:
+ *         description: Pizza du jour non définie ou introuvable
+ *       500:
+ *         description: Erreur serveur lors de la récupération de la pizza du jour
+ */
 
 //Route GET pour récupérer la pizza du jour
 router.get('/jour', async (req, res) => {
