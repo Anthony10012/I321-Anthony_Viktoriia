@@ -1,142 +1,217 @@
-// Import du module express pour créer le serveur et les routes
+// Importer le module express pour créer le serveur et gérer les routes
 const express = require('express');
 
-// Création d’un routeur express pour gérer les routes de pizzas
+// Créer un routeur express pour gérer les routes spécifiques aux pizzas
 const router = express.Router();
 
-// Import de la fonction query et du pool depuis la configuration de la base de données
-const { query, pool } = require('../config/database');
+// Importer la fonction query depuis la configuration de la base de données pour exécuter des requêtes SQL
+const { query } = require('../config/database');
 
-// ---------------- GET ALL PIZZAS ----------------
-// Route pour récupérer toutes les pizzas
+/**
+ * @swagger
+ * tags:
+ *   name: Pizzas
+ *   description: API pour gérer les pizzas
+ */
+
+/**
+ * @swagger
+ * /pizzas:
+ *   get:
+ *     summary: Récupérer toutes les pizzas
+ *     tags: [Pizzas]
+ *     responses:
+ *       200:
+ *         description: Liste de toutes les pizzas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   title:
+ *                     type: string
+ *                   price:
+ *                     type: number
+ */
+// Route GET pour récupérer toutes les pizzas
 router.get('/', async (req, res) => {
-    try {
-        // Requête SQL simple pour récupérer id, nom (title) et prix de toutes les pizzas
-        const sql = 'SELECT idpizzas AS id, name AS title, price FROM pizzas ORDER BY idpizzas;';
-        
-        // Exécution de la requête SQL
-        const [rows] = await query(sql);
-        
-        // Retour des données en JSON avec un statut 200 (OK)
-        res.status(200).json(rows);
-    } catch (err) {
-        // En cas d’erreur, log de l’erreur et renvoi d’un message 500 (erreur serveur)
-        console.error('Erreur récupération pizzas:', err);
-        res.status(500).json({ message: "Impossible de récupérer les pizzas." });
-    }
+    // Définir la requête SQL pour sélectionner id, nom et prix de toutes les pizzas
+    const sql = 'SELECT idpizzas AS id, name AS title, price FROM pizzas ORDER BY idpizzas;';
+    // Exécuter la requête SQL et récupérer les lignes de résultats
+    const [rows] = await query(sql);
+    // Envoyer la réponse JSON avec la liste des pizzas et le code HTTP 200
+    res.status(200).json(rows);
 });
 
-// ---------------- GET PIZZA BY ID ----------------
-// Route pour récupérer une pizza spécifique par son ID
-router.get('/:id', async (req, res) => {
-    // Conversion de l’ID en nombre entier
-    const id = parseInt(req.params.id, 10);
-    
-    // Vérification que l’ID est valide
-    if (isNaN(id)) return res.status(400).json({ message: "ID invalide." });
-
-    try {
-        // Requête SQL pour récupérer la pizza correspondant à l’ID
-        const sql = 'SELECT idpizzas AS id, name AS title, price FROM pizzas WHERE idpizzas = ?;';
-        const [rows] = await query(sql, [id]);
-
-        // Si aucune pizza trouvée, retour 404
-        if (rows.length === 0) return res.status(404).json({ message: "Pizza non trouvée." });
-
-        // Retour de la pizza trouvée en JSON
-        res.status(200).json(rows[0]);
-    } catch (err) {
-        // En cas d’erreur serveur, log et retour d’un message 500
-        console.error(`Erreur récupération pizza ID ${id}:`, err);
-        res.status(500).json({ message: "Impossible de récupérer la pizza." });
-    }
-});
-
-// ---------------- CREATE PIZZA ----------------
-// Route pour créer une nouvelle pizza
+/**
+ * @swagger
+ * /pizzas:
+ *   post:
+ *     summary: Créer une nouvelle pizza
+ *     tags: [Pizzas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - price
+ *             properties:
+ *               title:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Pizza créée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 title:
+ *                   type: string
+ *                 price:
+ *                   type: number
+ */
+// Route POST pour créer une nouvelle pizza
 router.post('/', async (req, res) => {
-    // Récupération des données envoyées dans le corps de la requête
+    // Extraire title et price depuis le corps de la requête
     const { title, price } = req.body;
-
-    // Vérification que les champs obligatoires sont présents
-    if (!title || !price) {
-        return res.status(400).json({ message: "Champs requis manquants: title, price." });
-    }
-
-    try {
-        // Requête SQL pour insérer la nouvelle pizza dans la base
-        const sql = 'INSERT INTO pizzas (name, price) VALUES (?, ?)';
-        const [result] = await query(sql, [title, price]);
-
-        // Récupération de l’ID de la pizza créée
-        const newId = result.insertId;
-
-        // Requête pour récupérer la pizza créée afin de la retourner au client
-        const [rows] = await query('SELECT idpizzas AS id, name AS title, price FROM pizzas WHERE idpizzas = ?', [newId]);
-
-        // Retour de la pizza créée avec statut 201 (créé)
-        res.status(201).json(rows[0]);
-    } catch (err) {
-        // Log de l’erreur et retour message 500 si problème serveur
-        console.error('Erreur création pizza:', err);
-        res.status(500).json({ message: "Impossible de créer la pizza." });
-    }
+    // Vérifier que les champs obligatoires sont présents
+    if (!title || !price) return res.status(400).json({ message: "Champs requis manquants: title, price." });
+    // Définir la requête SQL pour insérer une nouvelle pizza
+    const sql = 'INSERT INTO pizzas (name, price) VALUES (?, ?)';
+    // Exécuter l'insertion et récupérer le résultat
+    const [result] = await query(sql, [title, price]);
+    // Récupérer l'ID de la pizza nouvellement créée
+    const newId = result.insertId;
+    // Requête pour récupérer la pizza créée afin de l'envoyer dans la réponse
+    const [rows] = await query('SELECT idpizzas AS id, name AS title, price FROM pizzas WHERE idpizzas = ?', [newId]);
+    // Envoyer la pizza créée avec le code HTTP 201 (créé)
+    res.status(201).json(rows[0]);
 });
 
-// ---------------- UPDATE PIZZA ----------------
-// Route pour mettre à jour une pizza existante par ID
+/**
+ * @swagger
+ * /pizzas/{id}:
+ *   get:
+ *     summary: Récupérer une pizza par ID
+ *     tags: [Pizzas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID de la pizza
+ *     responses:
+ *       200:
+ *         description: Pizza trouvée
+ *       404:
+ *         description: Pizza non trouvée
+ */
+// Route GET pour récupérer une pizza spécifique par son ID
+router.get('/:id', async (req, res) => {
+    // Convertir l'ID de la pizza depuis les paramètres de la requête en entier
+    const id = parseInt(req.params.id, 10);
+    // Requête SQL pour récupérer la pizza correspondant à l'ID
+    const sql = 'SELECT idpizzas AS id, name AS title, price FROM pizzas WHERE idpizzas = ?';
+    // Exécuter la requête SQL avec l'ID fourni
+    const [rows] = await query(sql, [id]);
+    // Si aucune pizza trouvée, renvoyer 404
+    if (rows.length === 0) return res.status(404).json({ message: "Pizza non trouvée." });
+    // Sinon, renvoyer la pizza trouvée
+    res.status(200).json(rows[0]);
+});
+
+/**
+ * @swagger
+ * /pizzas/{id}:
+ *   put:
+ *     summary: Mettre à jour une pizza existante
+ *     tags: [Pizzas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID de la pizza
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Pizza mise à jour
+ *       404:
+ *         description: Pizza non trouvée
+ */
+// Route PUT pour mettre à jour une pizza existante
 router.put('/:id', async (req, res) => {
+    // Récupérer l'ID depuis les paramètres
     const id = parseInt(req.params.id, 10);
+    // Extraire les champs title et price depuis le corps de la requête
     const { title, price } = req.body;
-
-    // Vérification que l’ID est un nombre valide
-    if (isNaN(id)) return res.status(400).json({ message: "ID invalide." });
-
-    try {
-        // Vérification que la pizza existe dans la base
-        const [existing] = await query('SELECT * FROM pizzas WHERE idpizzas = ?', [id]);
-        if (!existing.length) return res.status(404).json({ message: "Pizza non trouvée." });
-
-        // Détermination des nouvelles valeurs, sinon on garde celles existantes
-        const updatedTitle = title || existing[0].name;
-        const updatedPrice = price || existing[0].price;
-
-        // Mise à jour de la pizza dans la base
-        await query('UPDATE pizzas SET name = ?, price = ? WHERE idpizzas = ?', [updatedTitle, updatedPrice, id]);
-
-        // Récupération de la pizza mise à jour pour la renvoyer au client
-        const [rows] = await query('SELECT idpizzas AS id, name AS title, price FROM pizzas WHERE idpizzas = ?', [id]);
-        res.status(200).json(rows[0]);
-    } catch (err) {
-        // Log et retour message 500 en cas de problème serveur
-        console.error(`Erreur mise à jour pizza ID ${id}:`, err);
-        res.status(500).json({ message: "Impossible de mettre à jour la pizza." });
-    }
+    // Vérifier si la pizza existe
+    const [existing] = await query('SELECT * FROM pizzas WHERE idpizzas = ?', [id]);
+    if (!existing.length) return res.status(404).json({ message: "Pizza non trouvée." });
+    // Déterminer les nouvelles valeurs à mettre à jour (ou garder les anciennes si non fournies)
+    const updatedTitle = title || existing[0].name;
+    const updatedPrice = price || existing[0].price;
+    // Exécuter la requête SQL pour mettre à jour la pizza
+    await query('UPDATE pizzas SET name = ?, price = ? WHERE idpizzas = ?', [updatedTitle, updatedPrice, id]);
+    // Récupérer la pizza mise à jour pour la renvoyer
+    const [rows] = await query('SELECT idpizzas AS id, name AS title, price FROM pizzas WHERE idpizzas = ?', [id]);
+    res.status(200).json(rows[0]);
 });
 
-// ---------------- DELETE PIZZA ----------------
-// Route pour supprimer une pizza par ID
+/**
+ * @swagger
+ * /pizzas/{id}:
+ *   delete:
+ *     summary: Supprimer une pizza
+ *     tags: [Pizzas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID de la pizza
+ *     responses:
+ *       204:
+ *         description: Pizza supprimée
+ *       404:
+ *         description: Pizza non trouvée
+ */
+// Route DELETE pour supprimer une pizza
 router.delete('/:id', async (req, res) => {
+    // Convertir l'ID depuis les paramètres
     const id = parseInt(req.params.id, 10);
-
-    // Vérification que l’ID est valide
-    if (isNaN(id)) return res.status(400).json({ message: "ID invalide." });
-
-    try {
-        // Suppression de la pizza dans la base
-        const [result] = await query('DELETE FROM pizzas WHERE idpizzas = ?', [id]);
-
-        // Si aucune pizza supprimée, on retourne 404
-        if (result.affectedRows === 0) return res.status(404).json({ message: "Pizza non trouvée." });
-
-        // Retour 204 (pas de contenu) pour confirmer la suppression
-        res.status(204).send();
-    } catch (err) {
-        // Log et retour message 500 si erreur serveur
-        console.error(`Erreur suppression pizza ID ${id}:`, err);
-        res.status(500).json({ message: "Impossible de supprimer la pizza." });
-    }
+    // Exécuter la suppression dans la base de données
+    const [result] = await query('DELETE FROM pizzas WHERE idpizzas = ?', [id]);
+    // Si aucune ligne affectée, la pizza n'existait pas → renvoyer 404
+    if (result.affectedRows === 0) return res.status(404).json({ message: "Pizza non trouvée." });
+    // Sinon, renvoyer 204 (pas de contenu) pour indiquer la suppression
+    res.status(204).send();
 });
 
-// Export du routeur pour l’utiliser dans app.js
+// Exporter le routeur pour l'utiliser dans app.js
 module.exports = router;
