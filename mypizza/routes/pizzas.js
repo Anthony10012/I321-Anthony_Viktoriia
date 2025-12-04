@@ -181,7 +181,7 @@ router.get('/jour', async (req, res) => {
  *               - title
  *               - price
  *             properties:
- *               title:
+ *               name:
  *                 type: string
  *               price:
  *                 type: number
@@ -195,20 +195,33 @@ router.get('/jour', async (req, res) => {
  *               properties:
  *                 id:
  *                   type: integer
- *                 title:
+ *                 name:
  *                   type: string
  *                 price:
  *                   type: number
+ *
+ *       400:
+ *         description: Champs requis manquants (name, price)
+ *
+ *       500:
+ *         description:Erreur interne : impossible de créer la pizza.
+ *
  */
 // Route POST pour créer une nouvelle pizza
 router.post('/', async (req, res) => {
-    const { title, price } = req.body;
-    if (!title || !price) return res.status(400).json({ message: "Champs requis manquants: title, price." });
-    const sql = 'INSERT INTO pizzas (name, price) VALUES (?, ?)';
-    const [result] = await query(sql, [title, price]);
-    const newId = result.insertId;
-    const [rows] = await query('SELECT idpizzas AS id, name AS title, price FROM pizzas WHERE idpizzas = ?', [newId]);
-    res.status(201).json(rows[0]);
+    try{
+        const { name, price } = req.body;
+        if (!name || !price) return res.status(400).json({ message: "Champs requis manquants: name, price." });
+        const sql = 'INSERT INTO pizzas (name, price) VALUES (?, ?)';
+        const [result] = await query(sql, [name, price]);
+        const newId = result.insertId;
+        const [rows] = await query('SELECT idpizzas AS id, name, price FROM pizzas WHERE idpizzas = ?', [newId]);
+        res.status(201).json(rows[0]);
+    }catch (err) {
+        console.error("Erreur lors de la création d'une pizza :", err);
+        res.status(500).json({ message: "Erreur interne : impossible de créer la pizza." });
+    }
+
 });
 
 /**
