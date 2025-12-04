@@ -114,6 +114,32 @@ router.get('/', async (req, res) => {
     res.status(200).json(rows);
 });
 
+//Route GET pour récupérer la pizza du jour
+router.get('/jour', async (req, res) => {
+    try{
+        // Récupère la pizza du jour
+        const [daily]= await query('SELECT pizzas_idpizzas AS idpizza FROM pizza_du_jour WHERE id = 1');
+        if (daily.length === 0){
+            return res.status(404).json( {message:"Pizza du jour non définie."});
+
+        }
+        const pizzaId = daily[0].idpizza;
+        // Récupère les détails
+        const [rows] = await query(
+            'SELECT idpizzas AS id, name AS title, price FROM pizzas WHERE idpizzas = ?',
+            [pizzaId]
+        );
+        if (rows.length === 0){
+            return res.status(404).json({ message: "Pizza du jour introuvable dans la liste des pizzas." });
+        }
+        res.status(200).json(rows[0]);
+
+    }catch (err){
+        console.error("Erreur récupération pizza du jour:",err);
+        res.status(500).json({ message: "Impossible de récupérer la pizza du jour." });
+    }
+});
+
 /**
  * @swagger
  * /pizzas:

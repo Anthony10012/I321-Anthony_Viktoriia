@@ -36,6 +36,14 @@ CREATE TABLE IF NOT EXISTS pizzas_has_ingredients (
         ON UPDATE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS pizza_du_jour (
+	id INT PRIMARY KEY,
+	pizzas_idpizzas INT NOT NULL,
+	FOREIGN KEY (pizzas_idpizzas) REFERENCES pizzas(idpizzas)
+	
+);
+
+
 CREATE INDEX fk_pizzas_has_ingredients_pizzas_idx
     ON pizzas_has_ingredients (pizzas_idpizzas);
 
