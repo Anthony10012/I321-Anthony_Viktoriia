@@ -210,19 +210,34 @@ router.put('/:id', async (req, res) => {
  *     responses:
  *       204:
  *         description: Ingrédient supprimé
+ *       400:
+ *         description: ID invalide
  *       404:
  *         description: Ingrédient non trouvé
+ *       500:
+ *         description: Erreur serveur
  */
 // Route DELETE pour supprimer un ingrédient par ID
 router.delete('/:id', async (req, res) => {
-    // Conversion de l’ID en entier
-    const id = parseInt(req.params.id, 10);
-    // Suppression de l’ingrédient dans la base
-    const [result] = await query('DELETE FROM ingredients WHERE idingredients = ?', [id]);
-    // Si aucun ingrédient supprimé, retourner 404
-    if (result.affectedRows === 0) return res.status(404).json({ message: "Ingrédient non trouvé." });
-    // Retourner un statut 204 (pas de contenu) pour indiquer la suppression
-    res.status(204).send();
+    try{
+        // Conversion de l’ID en entier
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) {
+            return res.status(400).json({ message: "ID invalide." });
+        }
+        // Suppression de l’ingrédient dans la base
+        const [result] = await query('DELETE FROM ingredients WHERE idingredients = ?', [id]);
+        // Si aucun ingrédient supprimé, retourner 404
+        if (result.affectedRows === 0){
+            return res.status(404).json({ message: "Ingrédient non trouvé." });
+        }
+        // Retourner un statut 204 (pas de contenu) pour indiquer la suppression
+        res.status(204).send();
+    }catch(err){
+        console.error(`Erreur lors de la suppression de l'ingrédient :`, err);
+        return res.status(500).json({ message: "Erreur interne du serveur." });
+    }
+
 });
 
 // Export du routeur pour l’utiliser dans app.js
