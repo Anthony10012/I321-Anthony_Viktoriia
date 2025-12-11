@@ -297,6 +297,10 @@ router.get('/:id', async (req, res) => {
  *         description: Pizza non trouvée
  *       500:
  *         description: Erreur serveur lors de la mise à jour
+ *
+ *
+ *
+ *
  */
 // Route Patch pour mettre à jour le prix d'une pizza
 router.patch('/:id/price', async (req, res) => {
