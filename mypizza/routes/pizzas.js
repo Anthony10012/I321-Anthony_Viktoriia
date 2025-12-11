@@ -254,9 +254,9 @@ router.get('/:id', async (req, res) => {
 
 /**
  * @swagger
- * /pizzas/{id}:
- *   put:
- *     summary: Mettre à jour une pizza existante
+ * /pizzas/{id}/price:
+ *   patch:
+ *     summary: Mettre à jour uniquement le prix d'une pizza
  *     tags: [Pizzas]
  *     parameters:
  *       - in: path
@@ -264,35 +264,71 @@ router.get('/:id', async (req, res) => {
  *         schema:
  *           type: integer
  *         required: true
- *         description: ID de la pizza
+ *         description: ID de la pizza à modifier
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - price
  *             properties:
- *               title:
- *                 type: string
  *               price:
  *                 type: number
+ *                 example: 13.50
  *     responses:
  *       200:
- *         description: Pizza mise à jour
+ *         description: Prix mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 title:
+ *                   type: string
+ *                 price:
+ *                   type: number
+ *       400:
+ *         description: Champ 'price' manquant ou invalide
  *       404:
  *         description: Pizza non trouvée
+ *       500:
+ *         description: Erreur serveur lors de la mise à jour
+ *
+ *
+ *
+ *
  */
-// Route PUT pour mettre à jour une pizza existante
-router.put('/:id', async (req, res) => {
+// Route Patch pour mettre à jour le prix d'une pizza
+router.patch('/:id/price', async (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const { title, price } = req.body;
-    const [existing] = await query('SELECT * FROM pizzas WHERE idpizzas = ?', [id]);
-    if (!existing.length) return res.status(404).json({ message: "Pizza non trouvée." });
-    const updatedTitle = title || existing[0].name;
-    const updatedPrice = price || existing[0].price;
-    await query('UPDATE pizzas SET name = ?, price = ? WHERE idpizzas = ?', [updatedTitle, updatedPrice, id]);
-    const [rows] = await query('SELECT idpizzas AS id, name AS title, price FROM pizzas WHERE idpizzas = ?', [id]);
-    res.status(200).json(rows[0]);
+    const { price } = req.body;
+    if (isNaN(id)){
+        return res.status(400).json({message:"ID invalide"});
+    }
+    if (price === undefined || price === null){
+        return res.status(400).json({message:"le champ 'price' est requis."});
+    }
+    try{
+        // Vérifie que la pizza existe
+        const [existing] = await query('SELECT * FROM pizzas WHERE idpizzas = ?', [id]);
+        if (existing.length === 0){
+            return res.status(404).json({ message: "Pizza non trouvée." });
+        }
+        // Mise à jour du prix
+        await query('UPDATE pizzas SET price = ? WHERE idpizzas = ?', [price, id]);
+
+        // Retourne la pizza mise à jour
+        const [rows] = await query('SELECT idpizzas AS id, name AS title, price FROM pizzas WHERE idpizzas = ?', [id]);
+        res.status(200).json(rows[0]);
+    }catch(err){
+        console.error(`Erreur mise à jour du prix pour la pizza ${id} :`, err);
+        return res.status(500).json({message:"Impossible de mettre à jour le prix pour la pizza."});
+    }
+
 });
 
 /**
@@ -311,15 +347,33 @@ router.put('/:id', async (req, res) => {
  *     responses:
  *       204:
  *         description: Pizza supprimée
+ *       400:
+ *         description: ID invalide
  *       404:
  *         description: Pizza non trouvée
+ *       500:
+ *         description: Erreur serveur
  */
 // Route DELETE pour supprimer une pizza
 router.delete('/:id', async (req, res) => {
-    const id = parseInt(req.params.id, 10);
-    const [result] = await query('DELETE FROM pizzas WHERE idpizzas = ?', [id]);
-    if (result.affectedRows === 0) return res.status(404).json({ message: "Pizza non trouvée." });
-    res.status(204).send();
+    try{
+        const id = parseInt(req.params.id, 10);
+
+        if (isNaN(id)) {
+            return res.status(400).json({ message: "ID invalide." });
+        }
+        //Suppresion de la pizza
+        const [result] = await query('DELETE FROM pizzas WHERE idpizzas = ?', [id]);
+        if (result.affectedRows === 0){
+            return res.status(404).json({ message: "Pizza non trouvée." });
+        }
+        res.status(204).send();
+
+    }catch(err){
+        console.error("Erreur lors de la suppression de la pizza :", err);
+        return res.status(500).json({message:"Erreur interne du serveur"});
+    }
+
 });
 
 // Exporter le routeur pour l'utiliser dans app.js
