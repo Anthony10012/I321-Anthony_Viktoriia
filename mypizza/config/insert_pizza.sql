@@ -21,7 +21,10 @@ INSERT INTO ingredients (name) VALUES
 ('Chicken'),
 ('BBQ Sauce');
 
--- 3. Insert Relation Data (pizzas_has_ingredients)
+-- 3. Insert pizza_du_jour
+INSERT INTO pizza_du_jour (id, pizzas_idpizzas) VALUES (1, 5);
+
+-- 4. Insert Relation Data (pizzas_has_ingredients)
 
 -- Margherita (1)
 INSERT INTO pizzas_has_ingredients (pizzas_idpizzas, ingredients_idingredients) VALUES

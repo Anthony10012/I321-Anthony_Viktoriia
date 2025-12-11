@@ -10,7 +10,7 @@ const pool = mysql.createPool({
     user: 'root',
 
     // Mot de passe pour l'utilisateur MySQL
-    password: '', 
+    password: 'root',
 
     // Nom de la base de données à utiliser
     database: 'pizzayo',
