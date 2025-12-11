@@ -347,15 +347,33 @@ router.patch('/:id/price', async (req, res) => {
  *     responses:
  *       204:
  *         description: Pizza supprimée
+ *       400:
+ *         description: ID invalide
  *       404:
  *         description: Pizza non trouvée
+ *       500:
+ *         description: Erreur serveur
  */
 // Route DELETE pour supprimer une pizza
 router.delete('/:id', async (req, res) => {
-    const id = parseInt(req.params.id, 10);
-    const [result] = await query('DELETE FROM pizzas WHERE idpizzas = ?', [id]);
-    if (result.affectedRows === 0) return res.status(404).json({ message: "Pizza non trouvée." });
-    res.status(204).send();
+    try{
+        const id = parseInt(req.params.id, 10);
+
+        if (isNaN(id)) {
+            return res.status(400).json({ message: "ID invalide." });
+        }
+        //Suppresion de la pizza
+        const [result] = await query('DELETE FROM pizzas WHERE idpizzas = ?', [id]);
+        if (result.affectedRows === 0){
+            return res.status(404).json({ message: "Pizza non trouvée." });
+        }
+        res.status(204).send();
+
+    }catch(err){
+        console.error("Erreur lors de la suppression de la pizza :", err);
+        return res.status(500).json({message:"Erreur interne du serveur"});
+    }
+
 });
 
 // Exporter le routeur pour l'utiliser dans app.js
