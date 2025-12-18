@@ -164,6 +164,172 @@ router.get('/jour', async (req, res) => {
         res.status(500).json({ message: "Impossible de récupérer la pizza du jour." });
     }
 });
+/**
+ * @swagger
+ * /pizzas/jour:
+ *   post:
+ *     summary: Définir la pizza du jour
+ *     description: >
+ *       Définit la pizza du jour en enregistrant l’identifiant d’une pizza existante.
+ *       Cette opération est généralement utilisée lors de la première définition
+ *       de la pizza du jour.
+ *     tags:
+ *       - Pizzas
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - pizzaId
+ *             properties:
+ *               pizzaId:
+ *                 type: integer
+ *                 example: 3
+ *                 description: Identifiant de la pizza à définir comme pizza du jour
+ *     responses:
+ *       201:
+ *         description: Pizza du jour définie avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Pizza du jour définie.
+ *       400:
+ *         description: Requête invalide (pizzaId manquant ou incorrect)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: pizzaId requis.
+ *       500:
+ *         description: Erreur serveur lors de la définition de la pizza du jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Impossible de définir la pizza du jour.
+ */
+router.post('/jour', async (req, res) => {
+    const { pizzaId } = req.body;
+
+    if (!pizzaId) {
+        return res.status(400).json({ message: "pizzaId requis." });
+    }
+
+    try {
+        await query(
+            'INSERT INTO pizza_du_jour (id, pizzas_idpizzas) VALUES (1, ?)',
+            [pizzaId]
+        );
+        res.status(201).json({ message: "Pizza du jour définie." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Impossible de définir la pizza du jour." });
+    }
+});
+
+/**
+ * @swagger
+ * /pizzas/jour:
+ *   put:
+ *     summary: Modifier la pizza du jour
+ *     description: >
+ *       Modifie la pizza actuellement définie comme pizza du jour.
+ *       Cette opération remplace la pizza du jour existante par une autre
+ *       pizza identifiée par son identifiant.
+ *     tags:
+ *       - Pizzas
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - pizzaId
+ *             properties:
+ *               pizzaId:
+ *                 type: integer
+ *                 example: 5
+ *                 description: Identifiant de la nouvelle pizza du jour
+ *     responses:
+ *       200:
+ *         description: Pizza du jour mise à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Pizza du jour mise à jour.
+ *       400:
+ *         description: Requête invalide (pizzaId manquant ou incorrect)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: pizzaId requis.
+ *       404:
+ *         description: Pizza du jour non définie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Pizza du jour non définie.
+ *       500:
+ *         description: Erreur serveur lors de la modification de la pizza du jour
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Impossible de modifier la pizza du jour.
+ */
+router.put('/jour', async (req, res) => {
+    const { pizzaId } = req.body;
+
+    if (!pizzaId) {
+        return res.status(400).json({ message: "pizzaId requis." });
+    }
+
+    try {
+        const [result] = await query(
+            'UPDATE pizza_du_jour SET pizzas_idpizzas = ? WHERE id = 1',
+            [pizzaId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Pizza du jour non définie." });
+        }
+
+        res.status(200).json({ message: "Pizza du jour mise à jour." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Impossible de modifier la pizza du jour." });
+    }
+});
+
+
 
 /**
  * @swagger
